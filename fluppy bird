@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flappy Bird Clone</title>
+    <style>
+        body {
+            text-align: center;
+            background: linear-gradient(to bottom, #87CEEB, #4A90E2);
+            font-family: Arial, sans-serif;
+        }
+        canvas {
+            display: block;
+            margin: auto;
+            background-color: transparent;
+            border: 3px solid #000;
+            border-radius: 10px;
+        }
+        .buttons {
+            margin-top: 15px;
+        }
+        button {
+            padding: 12px 25px;
+            font-size: 18px;
+            margin: 5px;
+            border: none;
+            cursor: pointer;
+            border-radius: 8px;
+        }
+        .start-btn { background-color: #28a745; color: white; }
+        .restart-btn { background-color: #ffc107; }
+        .end-btn { background-color: #dc3545; color: white; }
+    </style>
+</head>
+<body>
+    <h2>Flappy Bird Clone</h2>
+    <canvas id="gameCanvas" width="320" height="480"></canvas>
+    <div class="buttons">
+        <button class="start-btn" onclick="startGame()">Start</button>
+        <button class="restart-btn" onclick="restartGame()">Restart</button>
+        <button class="end-btn" onclick="endGame()">End</button>
+    </div>
+    <audio id="flapSound" src="https://www.fesliyanstudios.com/play-mp3/4384" preload="auto"></audio>
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        let gameRunning = false;
+        let bird, pipes, score, frameCount;
+        const flapSound = document.getElementById("flapSound");
+        
+        function initGame() {
+            bird = { x: 50, y: 150, width: 20, height: 20, gravity: 0.6, lift: -10, velocity: 0 };
+            pipes = [];
+            score = 0;
+            frameCount = 0;
+            gameRunning = false;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawBird();
+        }
+
+        function startGame() {
+            if (!gameRunning) {
+                gameRunning = true;
+                gameLoop();
+            }
+        }
+
+        function restartGame() {
+            initGame();
+            startGame();
+        }
+
+        function endGame() {
+            gameRunning = false;
+            alert("Game Over! Score: " + score);
+            initGame();
+        }
+
+        function drawBird() {
+            ctx.fillStyle = "red";
+            ctx.beginPath();
+            ctx.arc(bird.x + 10, bird.y + 10, 10, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function drawPipes() {
+            ctx.fillStyle = "green";
+            pipes.forEach(pipe => {
+                ctx.fillRect(pipe.x, 0, pipe.width, pipe.top);
+                ctx.fillRect(pipe.x, pipe.bottom, pipe.width, canvas.height - pipe.bottom);
+            });
+        }
+
+        function updatePipes() {
+            pipes.forEach(pipe => { pipe.x -= 2; });
+            if (pipes.length > 0 && pipes[0].x + pipes[0].width < 0) {
+                pipes.shift();
+                score++;
+            }
+            if (frameCount % 90 === 0) {
+                let topHeight = Math.random() * (canvas.height - 150) + 50;
+                pipes.push({ x: canvas.width, width: 40, top: topHeight, bottom: topHeight + 120 });
+            }
+        }
+
+        function updateBird() {
+            bird.velocity += bird.gravity;
+            bird.y += bird.velocity;
+            if (bird.y + bird.height >= canvas.height) endGame();
+        }
+
+        function checkCollision() {
+            pipes.forEach(pipe => {
+                if (bird.x < pipe.x + pipe.width && bird.x + bird.width > pipe.x &&
+                    (bird.y < pipe.top || bird.y + bird.height > pipe.bottom)) {
+                    endGame();
+                }
+            });
+        }
+
+        function gameLoop() {
+            if (!gameRunning) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawBird();
+            drawPipes();
+            updatePipes();
+            updateBird();
+            checkCollision();
+            ctx.fillStyle = "black";
+            ctx.font = "18px Arial";
+            ctx.fillText("Score: " + score, 10, 25);
+            frameCount++;
+            requestAnimationFrame(gameLoop);
+        }
+
+        document.addEventListener("keydown", function (event) {
+            if (event.code === "Space" && gameRunning) {
+                bird.velocity = bird.lift;
+                flapSound.play();
+            }
+        });
+
+        initGame();
+    </script>
+</body>
+</html>
